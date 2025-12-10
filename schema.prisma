@@ -1,0 +1,125 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  USER
+  VIP_1
+  VIP_2
+  ADMIN
+  COMPLIANCE_OFFICER
+}
+
+enum KycLevel {
+  LEVEL_0 // Browse only
+  LEVEL_1 // Crypto Deposit/Withdraw
+  LEVEL_2 // Fiat On-Ramp
+  LEVEL_3 // Virtual Card Issuance
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  phone           String?   @unique
+  passwordHash    String
+  role            UserRole  @default(USER)
+  kycLevel        KycLevel  @default(LEVEL_0)
+  twoFAEnabled    Boolean   @default(false)
+  twoFASecret     String?
+  phishingCode    String?   // Anti-phishing security feature
+  
+  wallets         Wallet[]
+  cards           VirtualCard[]
+  kycDocuments    KycDocument[]
+  orders          Order[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email, phone])
+}
+
+model Wallet {
+  id              String    @id @default(uuid())
+  userId          String
+  currency        String    // USDT, BTC, HIBE
+  type            String    // SPOT, FUNDING, CARD
+  balance         Decimal   @default(0.0) @db.Decimal(36, 18)
+  locked          Decimal   @default(0.0) @db.Decimal(36, 18) // In orders
+  depositAddress  String?
+  
+  user            User      @relation(fields: [userId], references: [id])
+  transactions    Transaction[]
+
+  @@unique([userId, currency, type])
+}
+
+model Transaction {
+  id              String    @id @default(uuid())
+  walletId        String
+  amount          Decimal   @db.Decimal(36, 18)
+  type            String    // DEPOSIT, WITHDRAW, TRADE_FEE, TRANSFER, CARD_SPEND
+  status          String    // PENDING, COMPLETED, FAILED, ON_CHAIN_CONFIRMING
+  txHash          String?   // Blockchain Hash
+  referenceId     String?   // Internal ref (Order ID, Card Tx ID)
+  
+  wallet          Wallet    @relation(fields: [walletId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+}
+
+model VirtualCard {
+  id              String    @id @default(uuid())
+  userId          String
+  providerId      String    // ID from Marqeta/Lithic
+  last4           String
+  expiryMonth     Int
+  expiryYear      Int
+  status          String    // ACTIVE, FROZEN, TERMINATED
+  currency        String    // USD
+  balance         Decimal   @default(0.0) @db.Decimal(18, 2)
+  
+  dailyLimit      Decimal   @default(1000.0)
+  monthlyLimit    Decimal   @default(5000.0)
+  
+  user            User      @relation(fields: [userId], references: [id])
+  transactions    CardTransaction[]
+  
+  createdAt       DateTime  @default(now())
+}
+
+model CardTransaction {
+  id              String    @id @default(uuid())
+  cardId          String
+  merchantName    String
+  merchantCategory String?
+  amount          Decimal   @db.Decimal(18, 2)
+  currency        String
+  status          String
+  
+  card            VirtualCard @relation(fields: [cardId], references: [id])
+  createdAt       DateTime  @default(now())
+}
+
+model Order {
+  id              String    @id @default(uuid())
+  userId          String
+  symbol          String    // BTC/USDT
+  side            String    // BUY, SELL
+  type            String    // LIMIT, MARKET
+  price           Decimal?  @db.Decimal(36, 18)
+  quantity        Decimal   @db.Decimal(36, 18)
+  filled          Decimal   @default(0) @db.Decimal(36, 18)
+  status          String    // OPEN, FILLED, PARTIAL, CANCELLED
+  
+  user            User      @relation(fields: [userId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
