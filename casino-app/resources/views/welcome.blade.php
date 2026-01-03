@@ -7,5 +7,6 @@
 </head>
 <body>
     <h1>Casino App Scaffold</h1>
+    <p>API ready for auth, wallet, bets, rounds.</p>
 </body>
 </html>

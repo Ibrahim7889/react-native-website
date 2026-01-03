@@ -9,6 +9,11 @@ class Round extends Model
 {
     use HasFactory;
 
+    public const STATE_OPEN_BETS = 'betting';
+    public const STATE_CLOSED = 'closed';
+    public const STATE_SPINNING = 'spinning';
+    public const STATE_RESULTED = 'resolved';
+
     protected $fillable = [
         'state',
         'seed_hash',

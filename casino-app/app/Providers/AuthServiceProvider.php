@@ -6,7 +6,9 @@ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvid
 
 class AuthServiceProvider extends ServiceProvider
 {
-    protected $policies = [];
+    protected $policies = [
+        \App\Models\Bet::class => \App\Policies\BetPolicy::class,
+    ];
 
     public function boot(): void
     {

@@ -9,6 +9,11 @@ class Bet extends Model
 {
     use HasFactory;
 
+    public const STATUS_PLACED = 'placed';
+    public const STATUS_WON = 'won';
+    public const STATUS_LOST = 'lost';
+    public const STATUS_REFUNDED = 'refunded';
+
     protected $fillable = [
         'user_id',
         'wallet_id',

@@ -2,4 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome');
+use App\Http\Controllers\Web\HomeController;
+
+Route::get('/', HomeController::class);
